@@ -1,0 +1,12 @@
+[project]
+name = "cn-02-kemmy-comfyui-sequential-prompt-list"
+version = "0.1.0"
+description = "Ordered multiline prompt-list conditioning node for ComfyUI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "kemmy2302" }]
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
