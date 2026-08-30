@@ -77,7 +77,9 @@ class OPTSequentialPromptList:
             and _clean(record.get("prompt"))
         ]
         if not records:
-            raise ValueError("Sequential Prompt List has no enabled, non-empty records")
+            prompt = _join_prompt(prefix_prompt, suffix_prompt)
+            tokens = clip.tokenize(prompt)
+            return ([clip.encode_from_tokens_scheduled(tokens)],)
 
         conditionings = []
         for record in records:
@@ -142,7 +144,7 @@ class OPTSequentialPromptListString:
             and _clean(record.get("prompt"))
         ]
         if not prompts:
-            raise ValueError("Sequential Prompt List has no enabled, non-empty records")
+            prompts = [_join_prompt(prefix_prompt, suffix_prompt)]
 
         return (prompts,)
 

@@ -192,7 +192,7 @@ morning sunlight
 
 produces one image prompt, not three prompts.
 
-Disable a record when you want to keep it in the list but skip it temporarily. Empty records are also skipped. Queueing fails with a clear error if no enabled, non-empty records remain.
+Disable a record when you want to keep it in the list but skip it temporarily. Empty records are also skipped. If no enabled, non-empty records remain, the node produces one item containing only `prefix_prompt` and `suffix_prompt` instead of raising an error.
 
 ## Prefix and suffix inputs
 
@@ -270,9 +270,9 @@ Restart ComfyUI and refresh the browser with `Ctrl+F5` after updating frontend f
 - Refresh the browser with `Ctrl+F5` to clear cached JavaScript.
 - Make sure only one copy of this custom node is installed.
 
-### Queueing reports that no records are available
+### Every record is disabled
 
-At least one record must be enabled and contain non-whitespace prompt text.
+This is valid. The node produces one output item by joining `prefix_prompt` and `suffix_prompt`. If both fixed inputs are empty, it produces one empty prompt item.
 
 ### Only one result is produced after the STRING node
 

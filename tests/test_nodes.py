@@ -28,9 +28,13 @@ class SequentialPromptListTests(unittest.TestCase):
         self.assertEqual(result[0][0], [["conditioning", "character\nschool\nquality"]])
         self.assertEqual(result[0][1], [["conditioning", "character\nclass\nquality"]])
 
-    def test_empty_records_fail(self):
-        with self.assertRaises(ValueError):
-            OPTSequentialPromptList().build(self.FakeClip(), '{"records": []}')
+    def test_empty_records_encode_prefix_and_suffix(self):
+        result = OPTSequentialPromptList().build(
+            self.FakeClip(), '{"records": []}', "character", "quality"
+        )
+        self.assertEqual(
+            result[0][0], [["conditioning", "character\nquality"]]
+        )
 
     def test_string_output_keeps_order_and_joins_all_parts(self):
         state = {"records": [
@@ -51,9 +55,15 @@ class SequentialPromptListTests(unittest.TestCase):
         result = OPTSequentialPromptListString().build(json.dumps(state))
         self.assertEqual(result[0], ["school"])
 
-    def test_string_output_empty_records_fail(self):
-        with self.assertRaises(ValueError):
-            OPTSequentialPromptListString().build('{"records": []}')
+    def test_string_output_empty_records_joins_prefix_and_suffix(self):
+        result = OPTSequentialPromptListString().build(
+            '{"records": []}', "character", "quality"
+        )
+        self.assertEqual(result[0], ["character\nquality"])
+
+    def test_string_output_empty_records_and_empty_fixed_prompts(self):
+        result = OPTSequentialPromptListString().build('{"records": []}')
+        self.assertEqual(result[0], [""])
 
 if __name__ == "__main__":
     unittest.main()
