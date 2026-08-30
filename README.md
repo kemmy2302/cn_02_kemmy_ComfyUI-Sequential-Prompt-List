@@ -14,6 +14,7 @@ The nodes have no Python package dependencies.
 
 - Displays one title and multiline prompt editor per list item.
 - Adds, deletes, duplicates, enables, disables, and reorders list items.
+- Enables or disables every list item at once.
 - Keeps normal line breaks inside one item; a line break does not create a new record.
 - Combines an optional fixed prefix, the current list item, and an optional fixed suffix.
 - Processes enabled, non-empty items from top to bottom.
@@ -176,6 +177,8 @@ Each record contains:
 - an editable title;
 - a multiline prompt field;
 - up, down, duplicate, and delete buttons.
+
+Use **Enable all** to check every record, or **Disable all** to clear every record's checkbox. These actions do not delete or change the prompt text.
 
 The title is for your organization and is not included in the generated prompt. Only the multiline prompt field is sent downstream.
 

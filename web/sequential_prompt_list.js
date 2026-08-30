@@ -142,8 +142,18 @@ function setupListNode(node) {
     element("button", { textContent: "Load", onclick: async () => { try { state = await jsonRequest(`${API_ROOT}/lists/${encodeURIComponent(fileName.value)}`); state.records ||= []; sync(); render(); status.textContent = `Loaded ${fileName.value}`; } catch (error) { status.textContent = error.message; } } }),
     element("button", { textContent: "Save", onclick: async () => { try { state = await jsonRequest(`${API_ROOT}/lists/${encodeURIComponent(fileName.value)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state) }); sync(); render(); status.textContent = `Saved ${fileName.value}`; } catch (error) { status.textContent = error.message; } } }),
   ]);
+  const enableBar = element("div", { className: "opt-toolbar" }, [
+    element("button", { textContent: "Enable all", onclick: () => {
+      state.records.forEach((record) => { record.enabled = true; });
+      sync(); render();
+    } }),
+    element("button", { textContent: "Disable all", onclick: () => {
+      state.records.forEach((record) => { record.enabled = false; });
+      sync(); render();
+    } }),
+  ]);
   const addButton = element("button", { textContent: "+ Add List Item", onclick: () => addRecord() });
-  container.append(topSpacer, fileBar, status, listArea, addButton);
+  container.append(topSpacer, fileBar, enableBar, status, listArea, addButton);
   addDomEditor(node, "sequential_prompt_list_editor", container, 600);
   render();
   setTimeout(() => {
