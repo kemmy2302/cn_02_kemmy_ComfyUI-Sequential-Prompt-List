@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from nodes import OPTSequentialPromptList
+from nodes import OPTSequentialPromptList, OPTSequentialPromptListString
 
 
 class SequentialPromptListTests(unittest.TestCase):
@@ -32,6 +32,28 @@ class SequentialPromptListTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             OPTSequentialPromptList().build(self.FakeClip(), '{"records": []}')
 
+    def test_string_output_keeps_order_and_joins_all_parts(self):
+        state = {"records": [
+            {"id": "1", "enabled": True, "prompt": "school"},
+            {"id": "2", "enabled": False, "prompt": "skip"},
+            {"id": "3", "enabled": True, "prompt": "class"},
+        ]}
+        result = OPTSequentialPromptListString().build(
+            json.dumps(state), "character", "quality"
+        )
+        self.assertEqual(result[0], [
+            "character\nschool\nquality",
+            "character\nclass\nquality",
+        ])
+
+    def test_string_output_omits_blank_optional_parts(self):
+        state = {"records": [{"id": "1", "enabled": True, "prompt": "school"}]}
+        result = OPTSequentialPromptListString().build(json.dumps(state))
+        self.assertEqual(result[0], ["school"])
+
+    def test_string_output_empty_records_fail(self):
+        with self.assertRaises(ValueError):
+            OPTSequentialPromptListString().build('{"records": []}')
 
 if __name__ == "__main__":
     unittest.main()

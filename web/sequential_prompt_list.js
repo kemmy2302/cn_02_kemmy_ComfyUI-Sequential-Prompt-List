@@ -157,7 +157,7 @@ function setupListNode(node) {
 app.registerExtension({
   name: "KemmySequentialPromptList.Editor",
   async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name === "OPTSequentialPromptList") {
+    if (["OPTSequentialPromptList", "OPTSequentialPromptListString"].includes(nodeData.name)) {
       const original = nodeType.prototype.onNodeCreated;
       nodeType.prototype.onNodeCreated = function () { original?.apply(this, arguments); setupListNode(this); };
     }

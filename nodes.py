@@ -89,10 +89,70 @@ class OPTSequentialPromptList:
         return (conditionings,)
 
 
+class OPTSequentialPromptListString:
+    """Build one ordered prompt string per enabled GUI record."""
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("prompt",)
+    OUTPUT_IS_LIST = (True,)
+    FUNCTION = "build"
+    CATEGORY = "Ordered Prompt Tools"
+    DESCRIPTION = (
+        "Combine optional prefix and suffix inputs with each enabled prompt record, "
+        "then emit the completed strings from top to bottom."
+    )
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        default = json.dumps(
+            {
+                "version": 1,
+                "records": [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "enabled": True,
+                        "title": "List Item 001",
+                        "prompt": "",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        )
+        return {
+            "required": {
+                "records_json": (
+                    "STRING",
+                    {"default": default, "multiline": True, "dynamicPrompts": False},
+                ),
+            },
+            "optional": {
+                "prefix_prompt": ("STRING", {"forceInput": True}),
+                "suffix_prompt": ("STRING", {"forceInput": True}),
+            },
+        }
+
+    def build(self, records_json, prefix_prompt="", suffix_prompt=""):
+        state = _parse_json(records_json, {})
+        records = state.get("records", []) if isinstance(state, dict) else []
+        prompts = [
+            _join_prompt(prefix_prompt, record.get("prompt"), suffix_prompt)
+            for record in records
+            if isinstance(record, dict)
+            and record.get("enabled", True)
+            and _clean(record.get("prompt"))
+        ]
+        if not prompts:
+            raise ValueError("Sequential Prompt List has no enabled, non-empty records")
+
+        return (prompts,)
+
+
 NODE_CLASS_MAPPINGS = {
     "OPTSequentialPromptList": OPTSequentialPromptList,
+    "OPTSequentialPromptListString": OPTSequentialPromptListString,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "OPTSequentialPromptList": "cn_02_kemmy_Sequential Prompt List",
+    "OPTSequentialPromptListString": "cn_02_kemmy_Sequential Prompt List (String)",
 }
