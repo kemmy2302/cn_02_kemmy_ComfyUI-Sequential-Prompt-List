@@ -8,5 +8,12 @@ license = { text = "MIT" }
 authors = [{ name = "kemmy2302" }]
 dependencies = []
 
+[project.urls]
+Repository = "https://github.com/kemmy2302/cn_02_kemmy_ComfyUI-Sequential-Prompt-List"
+
+[tool.comfy]
+PublisherId = "kemmy"
+DisplayName = "Kemmy Sequential Prompt List"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
