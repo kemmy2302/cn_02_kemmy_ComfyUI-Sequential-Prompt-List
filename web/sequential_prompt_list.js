@@ -8,6 +8,7 @@ const css = `
 .opt-panel{font:12px sans-serif;color:var(--input-text,#ddd);background:var(--comfy-input-bg,#222);padding:8px;border-radius:6px;box-sizing:border-box;width:100%;max-width:100%;overflow-x:hidden;overflow-y:auto;max-height:620px;overscroll-behavior:contain}
 .opt-library-panel{height:620px;max-height:620px;overflow:hidden;display:flex;flex-direction:column}
 .opt-toolbar,.opt-row-actions{display:flex;gap:5px;align-items:center;margin-bottom:6px;flex-wrap:wrap;min-width:0;max-width:100%}.opt-toolbar>*,.opt-row-actions>*{min-width:0;max-width:100%}
+.opt-file-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;width:100%;margin-bottom:5px}.opt-file-grid select,.opt-file-grid input{min-width:0}
 .opt-top-spacer{height:16px;min-height:16px;flex:none}
 .opt-filter-bar{position:sticky;top:0;z-index:2;background:var(--comfy-input-bg,#222);padding:4px 0 6px}
 .opt-filter-grid{display:grid;grid-template-columns:minmax(120px,1fr) minmax(90px,.6fr);gap:5px}
@@ -107,7 +108,47 @@ function setupListNode(node) {
   const topSpacer = element("div", { className: "opt-top-spacer" });
   const status = element("div", { className: "opt-status" });
   const listArea = element("div");
-  const fileName = element("input", { type: "text", value: "prompt_list.json", placeholder: "prompt_list.json", style: "flex:1" });
+  const fileName = element("input", { type: "text", value: state.file_name || "", placeholder: "New filename.json", style: "flex:1" });
+  const fileSelect = element("select", { title: "Saved prompt-list JSON files" });
+
+  function setFileName(value) {
+    fileName.value = value || "";
+    state.file_name = fileName.value;
+    sync();
+  }
+
+  async function refreshFiles(preferred = fileName.value) {
+    const result = await jsonRequest(`${API_ROOT}/lists`);
+    fileSelect.replaceChildren(element("option", { value: "", textContent: "Choose saved JSON..." }));
+    for (const name of result.files || []) {
+      fileSelect.append(element("option", { value: name, textContent: name }));
+    }
+    fileSelect.value = (result.files || []).includes(preferred) ? preferred : "";
+    fileSelect.title = result.directory ? `Saved in: ${result.directory}` : "Saved prompt-list JSON files";
+  }
+
+  async function loadCurrentFile() {
+    const requested = fileName.value.trim();
+    if (!requested) throw new Error("Select a saved JSON file first.");
+    state = await jsonRequest(`${API_ROOT}/lists/${encodeURIComponent(requested)}`);
+    state.records ||= [];
+    fileName.value = state.file_name || requested;
+    sync(); render();
+    await refreshFiles(fileName.value);
+    status.textContent = `Loaded ${fileName.value}`;
+  }
+
+  async function saveCurrentFile() {
+    const requested = fileName.value.trim();
+    if (!requested) throw new Error("Enter a filename before saving.");
+    state.file_name = requested;
+    const saved = await jsonRequest(`${API_ROOT}/lists/${encodeURIComponent(requested)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state) });
+    state = { ...state, ...saved, records: saved.records || [] };
+    fileName.value = saved.file_name || requested;
+    sync(); render();
+    await refreshFiles(fileName.value);
+    status.textContent = `Saved ${fileName.value}`;
+  }
 
   function sync() {
     if (stateWidget) { stateWidget.value = JSON.stringify(state); stateWidget.callback?.(stateWidget.value); }
@@ -145,10 +186,16 @@ function setupListNode(node) {
     if (!state.records.length) listArea.append(element("div", { className: "opt-muted", textContent: "No list items. Add one below." }));
   }
 
+  fileSelect.onchange = () => { if (fileSelect.value) setFileName(fileSelect.value); };
+  fileName.oninput = () => { state.file_name = fileName.value; sync(); fileSelect.value = ""; };
+  const filePicker = element("div", { className: "opt-file-grid" }, [
+    fileSelect,
+    element("button", { textContent: "Refresh", title: "Refresh saved JSON list", onclick: async () => { try { await refreshFiles(); status.textContent = "File list refreshed."; } catch (error) { status.textContent = error.message; } } }),
+  ]);
   const fileBar = element("div", { className: "opt-toolbar" }, [
     fileName,
-    element("button", { textContent: "Load", onclick: async () => { try { state = await jsonRequest(`${API_ROOT}/lists/${encodeURIComponent(fileName.value)}`); state.records ||= []; sync(); render(); status.textContent = `Loaded ${fileName.value}`; } catch (error) { status.textContent = error.message; } } }),
-    element("button", { textContent: "Save", onclick: async () => { try { state = await jsonRequest(`${API_ROOT}/lists/${encodeURIComponent(fileName.value)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state) }); sync(); render(); status.textContent = `Saved ${fileName.value}`; } catch (error) { status.textContent = error.message; } } }),
+    element("button", { textContent: "Load", onclick: async () => { try { await loadCurrentFile(); } catch (error) { status.textContent = error.message; } } }),
+    element("button", { textContent: "Save", onclick: async () => { try { await saveCurrentFile(); } catch (error) { status.textContent = error.message; } } }),
   ]);
   const enableBar = element("div", { className: "opt-toolbar" }, [
     element("button", { textContent: "Enable all", onclick: () => {
@@ -161,13 +208,15 @@ function setupListNode(node) {
     } }),
   ]);
   const addButton = element("button", { textContent: "+ Add List Item", onclick: () => addRecord() });
-  container.append(topSpacer, fileBar, enableBar, status, listArea, addButton);
+  container.append(topSpacer, filePicker, fileBar, enableBar, status, listArea, addButton);
   addDomEditor(node, "sequential_prompt_list_editor", container, 600);
   render();
   setTimeout(() => {
     state = parseJSON(stateWidget?.value, state);
     state.records ||= [];
+    fileName.value = state.file_name || "";
     render();
+    refreshFiles(fileName.value).catch((error) => { status.textContent = error.message; });
   }, 0);
 }
 

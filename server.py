@@ -28,6 +28,15 @@ def register_routes():
     _REGISTERED = True
     routes = PromptServer.instance.routes
 
+    @routes.get("/kemmy-sequential-prompt-list/lists")
+    async def list_lists(_request):
+        root = _data_root() / "lists"
+        files = sorted(
+            (path.name for path in root.glob("*.json") if path.is_file()),
+            key=str.casefold,
+        )
+        return web.json_response({"files": files, "directory": str(root)})
+
     @routes.get("/kemmy-sequential-prompt-list/lists/{name}")
     async def get_list(request):
         try:
@@ -37,7 +46,11 @@ def register_routes():
         path = _data_root() / "lists" / name
         if not path.is_file():
             raise web.HTTPNotFound(text="list file not found")
-        return web.json_response(read_json(path, {"version": 1, "records": []}))
+        payload = read_json(path, {"version": 1, "records": []})
+        if not isinstance(payload, dict):
+            raise web.HTTPBadRequest(text="list file must contain a JSON object")
+        payload["file_name"] = name
+        return web.json_response(payload)
 
     @routes.post("/kemmy-sequential-prompt-list/lists/{name}")
     async def save_list(request):
@@ -51,4 +64,4 @@ def register_routes():
             raise web.HTTPBadRequest(text="records must be an array")
         payload = {"version": 1, "records": records}
         atomic_write_json(_data_root() / "lists" / name, payload)
-        return web.json_response(payload)
+        return web.json_response({**payload, "file_name": name})

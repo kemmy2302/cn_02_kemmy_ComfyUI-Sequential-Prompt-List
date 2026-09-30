@@ -1,15 +1,26 @@
 import json
 import re
+import unicodedata
 from pathlib import Path
 
 
 def safe_name(value, suffix=".json"):
-    name = str(value or "").strip().replace("\\", "/").split("/")[-1]
-    name = re.sub(r"[^A-Za-z0-9_.-]+", "_", name).strip("._")
+    name = unicodedata.normalize("NFC", str(value or "")).strip()
+    if not name or name in {".", ".."}:
+        raise ValueError("name is empty")
+    if Path(name).name != name or "/" in name or "\\" in name:
+        raise ValueError("directory components are not allowed")
+    if re.search(r'[<>:"/\\|?*\x00-\x1f]', name):
+        raise ValueError("name contains unsupported characters")
+    name = name.rstrip(". ")
     if not name:
         raise ValueError("name is empty")
     if suffix and not name.lower().endswith(suffix):
         name += suffix
+    stem = name[: -len(suffix)] if suffix and name.lower().endswith(suffix) else name
+    reserved = {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
+    if stem.upper() in reserved:
+        raise ValueError("reserved filename")
     return name
 
 

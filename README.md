@@ -214,12 +214,14 @@ Typical usage:
 
 ## Saving and loading lists
 
-The filename field at the top defaults to `prompt_list.json`.
+The file selector at the top lists every saved prompt-list JSON file. Use **Refresh** after adding a file outside ComfyUI.
 
-- **Save** writes the current records to that filename.
-- **Load** replaces the current records with the contents of that filename.
+- Select a saved file, then click **Load** to replace the current records with its contents.
+- **Save** writes the current records to the filename shown in the text field.
+- The active filename is stored in the workflow and no longer resets to a default filename when the node UI is rebuilt.
+- Unicode filenames, including Japanese names, are supported.
 - If `.json` is omitted, it is added automatically.
-- Directory components and unsupported filename characters are removed for safety.
+- Directory components and unsupported filename characters are rejected for safety.
 
 Saved list files can be used by both node variants.
 
